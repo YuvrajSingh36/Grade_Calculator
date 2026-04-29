@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assessment Grade Calculator for ITEZ100</title>
+    <style>
+        :root {
+            --primary-color: #4A90E2;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-main: #333333;
+            --success-color: #2ecc71;
+            --error-color: #e74c3c;
+            --nn-color: #e74c3c; /* Red */
+            --pa-color: #2ecc71; /* Green */
+            --di-color: #3498db; /* Blue */
+            --hd-color: #9b59b6; /* Purple */
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .calculator-container {
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        /* Hide stepper arrows */
+        input[type="number"]::-webkit-inner-spin-button, 
+        input[type="number"]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        .error-message {
+            color: var(--error-color);
+            font-size: 0.9em;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 10px;
+            min-height: 20px;
+        }
+
+        .result-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #eee;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .score-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .final-score {
+            font-size: 2em;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        .letter-grade {
+            font-size: 1.5em;
+            font-weight: bold;
+            padding: 5px 15px;
+            border-radius: 8px;
+            color: white;
+            background-color: #ccc; /* Default gray */
+            min-width: 40px;
+        }
+
+        /* Grade Colors */
+        .grade-NN { background-color: var(--nn-color); }
+        .grade-PA { background-color: var(--pa-color); }
+        .grade-DI { background-color: var(--di-color); }
+        .grade-HD { background-color: var(--hd-color); }
+
+        .message {
+            font-size: 1.1em;
+            font-weight: 600;
+            min-height: 24px;
+        }
+
+        .pass-message {
+            color: var(--success-color);
+        }
+    </style>
+</head>
+<body>
+
+<div class="calculator-container">
+    <h2>Grade Calculator for ITEZ 100</h2>
+
+    <div class="input-group">
+        <label for="quiz">Quiz (Max 30)</label>
+        <input type="number" id="quiz" placeholder="0 - 30">
+    </div>
+
+    <div class="input-group">
+        <label for="labs">Lab Exercises (Max 20)</label>
+        <input type="number" id="labs" placeholder="0 - 20">
+    </div>
+
+    <div class="input-group">
+        <label for="report">Report File (Max 15)</label>
+        <input type="number" id="report" placeholder="0 - 15">
+    </div>
+
+    <div class="input-group">
+        <label for="presentation">PowerPoint (Max 15)</label>
+        <input type="number" id="presentation" placeholder="0 - 15">
+    </div>
+
+    <div class="input-group">
+        <label for="mo210">MO-210 Exam (Max 1000)</label>
+        <input type="number" id="mo210" placeholder="0 - 1000">
+    </div>
+
+    <div class="error-message" id="error-message"></div>
+
+    <div class="result-section">
+        <div>Current Final Grade:</div>
+        <div class="score-container">
+            <div class="final-score" id="final-score">0.00%</div>
+            <div class="letter-grade" id="letter-grade">--</div>
+        </div>
+        <div class="message" id="message"></div>
+    </div>
+</div>
+
+<script>
+    const quizInput = document.getElementById('quiz');
+    const labsInput = document.getElementById('labs');
+    const reportInput = document.getElementById('report');
+    const presentationInput = document.getElementById('presentation');
+    const mo210Input = document.getElementById('mo210');
+    
+    const finalScoreDisplay = document.getElementById('final-score');
+    const letterGradeDisplay = document.getElementById('letter-grade');
+    const messageDisplay = document.getElementById('message');
+    const errorDisplay = document.getElementById('error-message');
+
+    const inputs = [quizInput, labsInput, reportInput, presentationInput, mo210Input];
+    inputs.forEach(input => {
+        input.addEventListener('input', calculateGrade);
+    });
+
+    function getValidScore(inputStr, maxLimit) {
+        if (inputStr.trim() === '') return 0;
+        
+        const num = parseFloat(inputStr);
+        if (isNaN(num) || num < 0 || num > maxLimit) {
+            return null; 
+        }
+        return num;
+    }
+
+    function calculateGrade() {
+        errorDisplay.textContent = "";
+        messageDisplay.textContent = "";
+        messageDisplay.className = "message";
+        finalScoreDisplay.style.opacity = "1";
+        letterGradeDisplay.style.opacity = "1";
+
+        const quiz = getValidScore(quizInput.value, 30);
+        const labs = getValidScore(labsInput.value, 20);
+        const report = getValidScore(reportInput.value, 15);
+        const presentation = getValidScore(presentationInput.value, 15);
+        const mo210 = getValidScore(mo210Input.value, 1000);
+
+        if (quiz === null || labs === null || report === null || presentation === null || mo210 === null) {
+            errorDisplay.textContent = "Error: Please enter valid numbers within the allowed limits.";
+            finalScoreDisplay.textContent = "--.--%";
+            letterGradeDisplay.textContent = "--";
+            letterGradeDisplay.className = "letter-grade";
+            finalScoreDisplay.style.opacity = "0.5";
+            letterGradeDisplay.style.opacity = "0.5";
+            return;
+        }
+
+        const scaledMo210 = (mo210 / 1000) * 20;
+        const finalGrade = quiz + labs + report + presentation + scaledMo210;
+
+        finalScoreDisplay.textContent = finalGrade.toFixed(2) + '%';
+
+        // Logic for assigning the letter grade
+        let gradeText = "";
+        let gradeClass = "";
+
+        if (finalGrade < 50) {
+            gradeText = "NN";
+            gradeClass = "grade-NN";
+        } else if (finalGrade >= 50 && finalGrade < 70) {
+            gradeText = "PA";
+            gradeClass = "grade-PA";
+        } else if (finalGrade >= 70 && finalGrade < 85) {
+            gradeText = "DI";
+            gradeClass = "grade-DI";
+        } else if (finalGrade >= 85) {
+            gradeText = "HD";
+            gradeClass = "grade-HD";
+        }
+
+        // Apply text and color class to the badge
+        letterGradeDisplay.textContent = gradeText;
+        letterGradeDisplay.className = `letter-grade ${gradeClass}`;
+
+        // Pass message check
+        if (finalGrade >= 50) {
+            messageDisplay.textContent = "Congratulations you have passed.";
+            messageDisplay.className = "message pass-message";
+        }
+    }
+</script>
+
+</body>
+</html>
